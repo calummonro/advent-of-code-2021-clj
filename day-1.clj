@@ -2032,12 +2032,9 @@
 
 (split-into-windows sample-data)
 
-(defn sum [list]
-  (reduce + list))
-
 (defn calc-sum [input]
   (reduce (fn [acc [a b]]
-            (if (> (sum b) (sum a)) (+ acc 1) acc))
+            (if (> (apply + b) (apply + a)) (+ acc 1) acc))
           0
           (->> input
                (split-into-windows)
@@ -2045,10 +2042,6 @@
 
 (split-into-pairs (split-into-windows sample-data))
 
-(sum [1 2 3])
-
 (= 5 (calc-sum sample-data))
 
 (calc-sum problem-data)
-
-
