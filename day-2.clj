@@ -1008,44 +1008,31 @@
                   "down 8"
                   "forward 2"])
 
-(defn parse-instructions [instructions]
-  (for [instruction instructions]
+(defn parse-instructions [raw-instructions]
+  (for [instruction raw-instructions]
     (let [[command value] (str/split instruction #" ")]
       [command (Integer/parseInt value)])))
 
-(def parsed-data (parse-instructions sample-data))
+(parse-instructions sample-data)
 
-(defn group-by-instruction [input]
-  (group-by (fn [instruction]
-              (first instruction))
-            input))
+(defn aggregate-instructions [instructions]
+  (let [{:strs [forward up down]} (group-by first instructions)]
+    [(apply + (map last forward))
+     (- (apply + (map last down))
+        (apply + (map last up)))]))
 
-(group-by-instruction parsed-data)
-
-(defn sum-instructions [{:strs [forward down up]}]
-  [(apply + (map last forward))
-   (apply + (map last down))
-   (apply + (map last up))])
-
-(sum-instructions (group-by-instruction parsed-data))
-
-(defn aggregate-instructions [[forward down up]]
-  [forward
-   (- down up)])
-
-(aggregate-instructions (sum-instructions (group-by-instruction parsed-data)))
+(aggregate-instructions (parse-instructions sample-data))
 
 ;; returns tuple of [horizontal vertical]
 (defn calc [input]
   (-> input
       (parse-instructions)
-      (group-by-instruction)
-      (sum-instructions)
       (aggregate-instructions)))
 
 (calc problem-data)
 
 (apply * (calc problem-data))
 
+;; test
 (let [[horizontal depth] (calc sample-data)]
   (= 150 (* horizontal depth)))
