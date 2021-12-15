@@ -51,8 +51,6 @@
 
       :else nil)))
 
-(map vector [1 2 3] [4 5 6])
-
 (defn spread-lines [lines]
   (mapv spread-line lines))
 
@@ -69,8 +67,3 @@
 (defn calc [input]
   (let [coords (parse input)]
     (group-and-count coords)))
-
-(= 12 (calc sample-data))
-
-(calc sample-data)
-(calc problem-data)
