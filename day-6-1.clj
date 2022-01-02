@@ -19,15 +19,15 @@
 (defn get-next-fish-states [fish-states]
   (vec (flatten (mapv get-next-fish-state fish-states))))
 
-(defn simulate [data]
+(defn simulate [data day-count]
   (let [initial-fish-states (parse data)]
     (loop [fish-states initial-fish-states
            day 0]
-      (if (= day 80)
+      (if (= day day-count)
         (count fish-states)
         (recur (get-next-fish-states fish-states)
                (inc day))))))
 
-(= 5934 (simulate sample-data))
+(= 5934 (simulate sample-data 80))
 
 (simulate problem-data)
