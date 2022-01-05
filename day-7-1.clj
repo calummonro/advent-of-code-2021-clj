@@ -4,8 +4,6 @@
 (def sample-data (slurp "day-7-sample-data.txt"))
 (def problem-data (slurp "day-7-problem-data.txt"))
 
-(def positions (parse sample-data))
-
 (defn parse [data]
   (as-> data v
       (str/split v #"\n")
@@ -13,19 +11,19 @@
       (str/split v #",")
       (mapv #(Integer/parseInt %) v)))
 
-;; 1. loop from 0 - max(positions)
-;; 2. for each position,
-;;    - reduce to sum of distances from element to position
+(defn fuel-cost [x target-x]
+  (Math/abs (- x target-x)))
 
-(defn get-total-for-number [positions number]
-  (reduce (fn [total position]
-            (let [delta (Math/abs (- position number))]
-              (+ total delta)))
-          0
-          positions))
+(defn total-fuel-cost [positions target]
+  (->> positions
+       (map (partial fuel-cost target))
+       (reduce +)))
 
-(defn find-smallest-total [positions]
+(defn min-fuel-cost [positions]
   (let [max-position (apply max positions)
-        position-range (range max-position)]
-    (apply min (map (partial get-total-for-number positions)
-                    position-range))))
+        targets (range max-position)]
+    (->> targets
+         (map (partial total-fuel-cost positions))
+         (apply min))))
+
+(= 37 (min-fuel-cost (parse sample-data)))
