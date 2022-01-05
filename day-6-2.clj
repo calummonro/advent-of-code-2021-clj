@@ -1,32 +1,20 @@
 (ns day-6-2
   (:require [clojure.string :as str]))
 
-(def sample-data (slurp "day-6-sample-data.txt"))
-(def problem-data (slurp "day-6-problem-data.txt"))
+(defonce sample-data (slurp "day-6-sample-data.txt"))
+(defonce problem-data (slurp "day-6-problem-data.txt"))
 
 (defn parse [data]
   (as-> data v
-      (str/split v #"\n")
-      (first v)
-      (str/split v #",")
-      (mapv #(Integer/parseInt %) v)))
+    (str/split v #"\n")
+    (first v)
+    (str/split v #",")
+    (mapv #(Integer/parseInt %) v)))
 
-(defn to-freq-map [states]
-  (frequencies states))
+(defn get-total-count [freq-map]
+  (reduce + (vals freq-map)))
 
-(defn from-freq-map-old [freq-map]
-  (let [kvps (seq freq-map)]
-    (vec (flatten
-          (for [group kvps]
-            (repeat (second group) (first group)))))))
-
-(defn get-total-count-from-freq-map [freq-map]
-  (reduce (fn [total-count [count freq]]
-            (+ total-count freq))
-          0
-          freq-map))
-
-(defn get-next-fish-state-for-group [freq-map day]
+(defn get-next-freq-map [freq-map day]
   (assoc freq-map
          0 (get freq-map 1 0)
          1 (get freq-map 2 0)
@@ -40,7 +28,7 @@
 
 (defn simulate [data day-count]
   (let [initial-fish-states (parse data)
-        freq-map (to-freq-map initial-fish-states)]
-    (get-total-count-from-freq-map (reduce get-next-fish-state-for-group
-                                           freq-map
-                                           (range day-count)))))
+        freq-map (frequencies initial-fish-states)]
+    (->> (range day-count)
+         (reduce get-next-freq-map freq-map)
+         (get-total-count))))
