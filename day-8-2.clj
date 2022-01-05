@@ -6,8 +6,8 @@
 (def problem-data (slurp "day-8-problem-data.txt"))
 
 (defn create-input-map [row]
-  {:digits (vec (sort-by count (take 10 row)))
-   :output (vec (take-last 4 row))})
+  {:patterns (vec (sort-by count (take 10 row)))
+   :reading (vec (take-last 4 row))})
 
 (defn to-keyword-set [string]
   (as-> string v
@@ -26,20 +26,46 @@
     (str/split-lines v)
     (mapv parse-row v)))
 
+(defonce set-to-int-map
+  {#{:C :F} 1
+   #{:A :C :F} 7
+   #{:B :C :D :F} 4
+   #{:A :B :C :D :E :F :G} 8
+   #{:A :C :D :E :G} 2
+   #{:A :C :D :F :G} 3
+   #{:A :B :D :F :G} 5
+   #{:A :B :D :E :F :G} 6
+   #{:A :B :C :D :F :G} 9
+   #{:A :B :C :E :F :G} 0})
+
+;; RULES FOR ASSIGNING WIRES TO SEGMENTS
+;;
 ;; definitions:
-;; segments: :A, :B, :C (original)
-;; segments :a, :b, :c (encoded)
-;; numbers :1, :2, :3
+;; segments: :A, :B, :C (original) - the intended outputs
+;; wires: :a, :b, :c (encoded) - the inputs
+;; numbers 1, 2, 3
+;; five-counts: group of patterns which contain 5 active segments
+;; six-counts: group of patterns which contain 6 active segments
+;;
+;; useful segment sets:
+;;
+;; "horizontal-segments"
+;;   the set of the three horizontal segments :A, :D and :G
+;;   found by intersecting the five-counts
+;;
+;; "c-d-e" set
+;;   the arbitrary set of segments :C, :D, and :E
+;;   found by intersecting the six-counts
+;;
+;; find :A by taking the difference between patterns representing 7 and 1
+;; find :D by taking th intersection of 4 and the "horizontal-segments" set
+;; find :G by taking the difference of the horizontals and the two known horizontals (:A and :D)
+;; find :F by taking the intersection of 1 with the "c-d-e" set
+;; find :C by taking the intersection of 1 and :F
+;; find :B by taking the difference between 4 and the set of #{:C :D :F}
+;; find :E by taking the difference of 8 with all other known segments
 
-;; need to create some rules
-;; start with :1 - has two segments
-;; also :7 has 3 segments, two shared with :1, so the extra segment is :A
-;; next, find :D by comparing the 4 with the set of horizontal segments (foudn by intersecting the five counts)
-;; now
-;; next, find :G by taking the difference of the horizontals and 4
-;; next, find :F by taking the intersection of 1 with the (intersection of six-counts)
-;; next, find :C by taking using :F and :1
-
+;; not sure if there's a name for this...
 (defn get-exclusive-elements [sets]
   (clojure.set/difference
    (apply clojure.set/union sets)
@@ -60,8 +86,8 @@
     (first (clojure.set/difference horizontal-segments #{a d}))))
 
 (defn find-c [one six-counts]
-  (let [cde-set (get-exclusive-elements six-counts)]
-    (first (clojure.set/intersection cde-set one))))
+  (let [c-d-e-set (get-exclusive-elements six-counts)]
+    (first (clojure.set/intersection c-d-e-set one))))
 
 (defn find-f [one six-counts]
   (let [c (find-c one six-counts)]
@@ -73,14 +99,13 @@
 (defn find-e [eight a b c d f g]
   (first (clojure.set/difference eight #{a b c d f g})))
 
-;; creates map from segments to wires (e.g. wrong->correct)
-(defn create-segment-map [digits]
-  (let [one (first (filter #(= 2 (count %)) digits))
-        four (first (filter #(= 4 (count %)) digits))
-        seven (first (filter #(= 3 (count %)) digits))
-        eight (first (filter #(= 7 (count %)) digits))
-        five-counts (filter #(= 5 (count %)) digits) ;; (2 3 5)
-        six-counts (filter #(= 6 (count %)) digits) ;; (0 6 9)
+(defn find-cipher [patterns]
+  (let [one (first (filter #(= 2 (count %)) patterns))
+        four (first (filter #(= 4 (count %)) patterns))
+        seven (first (filter #(= 3 (count %)) patterns))
+        eight (first (filter #(= 7 (count %)) patterns))
+        five-counts (filter #(= 5 (count %)) patterns)
+        six-counts (filter #(= 6 (count %)) patterns)
         a (find-a one seven)
         d (find-d four five-counts)
         g (find-g a d five-counts)
@@ -96,34 +121,18 @@
      f :F
      g :G}))
 
-(def set-to-int-map
-  {#{:C :F} 1
-   #{:A :C :F} 7
-   #{:B :C :D :F} 4
-   #{:A :B :C :D :E :F :G} 8
-   #{:A :C :D :E :G} 2
-   #{:A :C :D :F :G} 3
-   #{:A :B :D :F :G} 5
-   #{:A :B :D :E :F :G} 6
-   #{:A :B :C :D :F :G} 9
-   #{:A :B :C :E :F :G} 0})
+(defn decode-pattern [cipher pattern]
+  (set (map #(% cipher) pattern)))
 
-(defn lookup-number [s]
-  (get set-to-int-map s))
+(defn decode-reading [{:keys [patterns reading]}]
+  (let [cipher (find-cipher patterns)]
+    (->> reading
+         (map #(decode-pattern cipher %))
+         (map set-to-int-map)
+         (str/join)
+         (Integer/parseInt))))
 
-;; next - convert from "eb" -> 1
-(defn map-to-wires [segment-map segments]
-  (set (map #(% segment-map) segments)))
-
-(defn to-int [values]
-  (Integer/parseInt (str/join values)))
-
-(defn decode [{:keys [digits output]}]
-  (let [segment-map (create-segment-map digits)]
-    (->> output
-         (map #(map-to-wires segment-map %))
-         (map lookup-number)
-         (to-int))))
-
-(defn calc [input-maps]
-  (reduce #(+ %1 (decode %2)) 0 input-maps))
+(defn sum-readings [input-maps]
+  (->> input-maps
+       (map decode-reading)
+       (reduce +)))
