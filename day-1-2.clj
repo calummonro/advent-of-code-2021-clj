@@ -6,15 +6,12 @@
     (str/split-lines v)
     (mapv #(Integer/parseInt %) v)))
 
-(defn calc [input]
-  (reduce (fn [acc [a b]]
-            (if (> (apply + b) (apply + a))
-              (+ acc 1)
-              acc))
-          0
-          (->> input
-               (partition 3 1 input)
-               (partition 2 1))))
+(defn calc [measurements]
+  (->> measurements
+       (partition 3 1)
+       (partition 2 1)
+       (filter (fn [[a b]] (> (reduce + b) (reduce + a))))
+       count))
 
 (defn start []
   (-> "data/day-1-problem-data.txt"
