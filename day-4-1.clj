@@ -1,7 +1,7 @@
 (require '[clojure.string :as str])
 (require '[clojure.set])
 
-(def problem-data (-> "day-4-data.txt"
+(def problem-data (-> "data/day-4-problem-data.txt"
                       (slurp)
                       (str/split #"\n\n")))
 

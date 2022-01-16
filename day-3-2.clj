@@ -1,32 +1,22 @@
-(require '[clojure.string :as str])
+(ns day-3-2
+  [:require [clojure.string :as str]])
 
-(def problem-data (-> "day-3-data.txt"
-                      (slurp)
-                      (str/split #"\n")))
+(defn to-matrix [lines]
+  (for [line lines]
+    (as-> line v
+      (str/split v #"")
+      (mapv #(Integer/parseInt %) v))))
 
-(def sample-data ["00100"
-                  "11110"
-                  "10110"
-                  "10111"
-                  "10101"
-                  "01111"
-                  "00111"
-                  "11100"
-                  "10000"
-                  "11001"
-                  "00010"
-                  "01010"])
-
-(defn to-matrix [input]
-  (vec (for [entry input]
-         (mapv (fn [char]
-                 (Integer/parseInt char))
-               (str/split entry #"")))))
-
-(def matrix (to-matrix sample-data))
+(defn parse [data]
+  (->> data
+       str/split-lines
+       to-matrix))
 
 (defn transpose [matrix]
   (apply mapv vector matrix))
+
+(defn vec->decimal [v]
+  (Integer/parseInt (apply str v) 2))
 
 ;; Criteria logic - use frequencies fn to count bits,
 ;; then compare counts depending on criteria
@@ -60,24 +50,18 @@
                    matrix
                    (range (count (transpose matrix)))))))
 
-(defn vec->decimal [v]
-  (Integer/parseInt (apply str v) 2))
+
 
 (def find-o2-rating (find-rating bit-criteria-o2))
 (def find-co2-rating (find-rating bit-criteria-co2))
 
-(find-o2-rating matrix)
-(find-co2-rating matrix)
-
-(vec->decimal (find-o2-rating matrix))
-(vec->decimal (find-co2-rating matrix))
-
-(defn find-life-support-rating [data]
-  (let [matrix (to-matrix data)
-        o2-rating (find-o2-rating matrix)
+(defn calc [matrix]
+  (let [o2-rating (find-o2-rating matrix)
         co2-rating (find-co2-rating matrix)]
     (* (vec->decimal o2-rating) (vec->decimal co2-rating))))
 
-(= 230 (find-life-support-rating sample-data))
-
-(find-life-support-rating problem-data)
+(defn start []
+  (-> "data/day-3-problem-data.txt"
+      slurp
+      parse
+      calc))
